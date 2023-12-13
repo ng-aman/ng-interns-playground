@@ -1,5 +1,5 @@
 
-# Ng-interns-playground : Intern Work Submission Repository
+## Intern Work Submission Repository
 
 Welcome to the Intern Work Submission Repository of Ngenux! 🚀
 
