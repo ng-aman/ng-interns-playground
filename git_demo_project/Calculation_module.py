@@ -1,7 +1,7 @@
 from calculation_module import calculate_result
 
 
-def calculate_result(operation_function, operand_numbers):
+def calculate_result(operation_function, operand_numbers):""
     if operation_function == add_numbers:
         result_addition = calculate_result(add_numbers, operand_numbers)
         return ("Result of addition:", result_addition)
