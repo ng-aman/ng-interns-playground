@@ -1,6 +1,11 @@
 import json
 import csv
 import os
+import logging
+
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def is_person_json(filename):
     return filename.lower().startswith("person") and filename.endswith(".json")
@@ -11,6 +16,7 @@ def process_json_file(file_path):
             data = json.load(json_file)
             
             if is_person_json(os.path.basename(file_path)):
+                data['name'] = data.get('name', 'MISSING') 
                 data['age'] = data.get('age', 'MISSING')
                 data['occupation'] = data.get('occupation', 'MISSING')
                 data['salary'] = data.get('salary', 'MISSING')
@@ -18,10 +24,10 @@ def process_json_file(file_path):
                 
                 return data
             else:
-                print(f"Skipping non-person JSON file: {file_path}")
+                logger.info(f"Skipping non-person JSON file: {file_path}")
                 return None
     except json.JSONDecodeError as e:
-        print(f"Error decoding JSON in file {file_path}: {e}")
+        logger.error(f"Error decoding JSON in file {file_path}: {e}")
         return None
 
 def process_folder(folder_path):
@@ -40,9 +46,10 @@ def process_folder(folder_path):
             csv_writer = csv.DictWriter(csv_file, fieldnames=['name', 'age', 'occupation', 'salary', 'phone_number'])
             csv_writer.writeheader()
             csv_writer.writerows(filter(None, processed_data))
-        print(f"CSV file successfully created at {output_csv_path}")
+        logger.info(f"CSV file successfully created at {output_csv_path}")
     except Exception as e:
-        assert False, f"Error writing to CSV file: {e}"
+        logger.error(f"Error writing to CSV file: {e}")
+        assert False, "Error writing to CSV file."
 
-# Replace 'your_folder_path' with the actual path to your folder
+# Enter the folder path
 process_folder(r'C:\Users\MsK_PC\ng-interns-playground\submissions\satish\json_files')
