@@ -1,0 +1,7 @@
+{
+  "name": "Yasmine",
+  "age": 21,
+  "occupation": "Electrician",
+  "salary": 93570,
+  "phone_number": "555-3447"
+}
