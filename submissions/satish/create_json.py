@@ -34,9 +34,9 @@ if __name__ == "__main__":
 
     generate_json_files(args.num_files, args.num_cores)
 
-    # generate a delay of 2s
+    
     print("Execution completed")
-    time.sleep(2)
+    
 
 
    
