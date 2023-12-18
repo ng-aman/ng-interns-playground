@@ -165,3 +165,5 @@ cython_debug/
 
 # configure
 configure.py
+# ignore.env file
+.env
