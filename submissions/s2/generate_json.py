@@ -1,4 +1,3 @@
-#importing libraries 
 import os 
 import json
 from datetime import datetime 
@@ -6,11 +5,12 @@ from tqdm import tqdm
 import time 
 import pandas as pd
 from concurrent.futures import ProcessPoolExecutor
+import argparse
 
-#creating json files and entering data
-def create_json_files(sub_dir):
+# Function to create json files
+def create_json_files(sub_dir, num_files):
     current_datetime = datetime.now()
-    for i in tqdm(range(1, 100001)):
+    for i in tqdm(range(1, num_files + 1), desc="Generating JSON files", unit="file"):
         file_name = f'json_file_{i}.json'
         json_file_path = os.path.join(sub_dir, file_name)
         
@@ -26,24 +26,27 @@ def create_json_files(sub_dir):
         with open(json_file_path, "w") as files:
             files.write(json.dumps(json_file_data))
 
+# Function to read a single json file
 def read_json_file(file_path):
     with open(file_path, "r") as file:
         return json.load(file)
 
-def read_all_json_files(folder_path):
+# Function to read all json files using multiprocessing
+def read_all_json_files(folder_path, num_cores):
     json_files = [os.path.join(folder_path, filename) for filename in os.listdir(folder_path) if filename.endswith(".json")]
 
-    with ProcessPoolExecutor() as executor, tqdm(total=len(json_files), desc="Reading JSON files", unit="file") as pbar:
+    with ProcessPoolExecutor(max_workers=num_cores) as executor, tqdm(total=len(json_files), desc="Reading JSON files", unit="file") as pbar:
         results = list(executor.map(read_json_file, json_files))
         pbar.update(len(results))
 
     return results
 
-def create_dataframe_and_csv(sub_dir, csv_filename):
+# Function to create dataframe and save as CSV
+def create_dataframe_and_csv(sub_dir, csv_filename, num_cores, num_files):
     start_time = datetime.now()
 
-    create_json_files(sub_dir)
-    json_data_list = read_all_json_files(sub_dir)
+    create_json_files(sub_dir, num_files)
+    json_data_list = read_all_json_files(sub_dir, num_cores)
 
     df = pd.DataFrame(json_data_list)
     df.to_csv(csv_filename, index=False)
@@ -53,6 +56,11 @@ def create_dataframe_and_csv(sub_dir, csv_filename):
     print(f"Time taken: {elapsed_time.total_seconds():.2f} seconds")
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description='Generate JSON files, read them, and save as CSV.')
+    parser.add_argument('--cores', type=int, default=os.cpu_count(), help='Number of cores to use for multiprocessing.')
+    parser.add_argument('--num_files', type=int, default=100000, help='Number of JSON files to generate.')
+    args = parser.parse_args()
+
     # Storing current directory path
     curr_dir = os.getcwd()
     # Joining new directory into the current directory
@@ -66,8 +74,4 @@ if __name__ == "__main__":
     # Specify the CSV filename
     csv_filename = "output_data.csv"
 
-    create_dataframe_and_csv(sub_dir, csv_filename)
-
-
-
-
+    create_dataframe_and_csv(sub_dir, csv_filename, args.cores, args.num_files)
