@@ -9,13 +9,13 @@ class Order:
         self.items = []
 
     def add_item(self, item, quantity):
-        self.items.append({"i": item, "q": quantity})
+        self.items.append({"item": item, "quantity": quantity})
 
     def total(self):
-        total_amount = 0
+        t = 0
         for item in self.items:
-            total_amount += item["i"].price * item["q"]
-        return total_amount
+            t += item["item"].price * item["quantity"]
+        return t
 
 
 class BillGenerator:
@@ -24,15 +24,15 @@ class BillGenerator:
 
     def generate_bill(self):
         total_amount = self.order.total()
-        service_tax = 0.05 * total_amount  # Assuming 5% service tax
-        gst = 0.18 * total_amount  # Assuming 18% GST
+        service_tax = 0.05 * total_amount # Assuming 5% service tax
+        gst = 0.18 * total_amount # Assuming 18% GST
 
         final_amount = total_amount + service_tax + gst
 
         # Display the bill
         print("------ Bill ------")
         for item in self.order.items:
-            print(f"{item['i'].name} x {item['q']}: {item['i'].price * item['q']}")
+            print(f"{item['item'].name} x {item['quantity']}: {item['item'].price * item['quantity']}")
 
         print(f"\nTotal Amount: {total_amount}")
         print(f"Service Tax (5%): {service_tax}")
