@@ -130,7 +130,7 @@ env.bak/
 venv.bak/
 
 # Remove specific environment file
-sample.env
+
 
 # Spyder project settings
 .spyderproject

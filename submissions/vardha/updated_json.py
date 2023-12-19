@@ -1,9 +1,10 @@
+
 import json
 import os
 import pandas as pd
 
 def process_json_files(json_folder):
-    # Get a list of JSON files in the folder
+    # list of JSON files in the folder
     json_files = [file for file in os.listdir(json_folder) if file.startswith("person_") and file.endswith(".json")]
 
     # Initialize an empty list to store data from all JSON files
@@ -51,3 +52,5 @@ def process_json_files(json_folder):
 # Example usage
 json_folder_path = os.path.join(os.getcwd(), "json_files")
 process_json_files(json_folder_path)
+
+

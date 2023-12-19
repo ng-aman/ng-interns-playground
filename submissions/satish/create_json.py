@@ -28,8 +28,8 @@ def generate_json_files(num_files, num_cores):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Generate JSON files concurrently with multiprocessing.")
-    parser.add_argument("num_files", type=int, help="Number of JSON files to generate")
-    parser.add_argument("num_cores", type=int, help="Number of CPU cores to use")
+    parser.add_argument("num_files", type=int, default = 100000, help="Number of JSON files to generate")
+    parser.add_argument("num_cores", type=int,default = 100, help="Number of CPU cores to use")
     args = parser.parse_args()
 
     generate_json_files(args.num_files, args.num_cores)

@@ -1,3 +1,4 @@
+
 import os
 from dotenv import load_dotenv
 from config import CORES, NUMBER_OF_FILES
@@ -11,4 +12,3 @@ if __name__ == "__main__":
     print(f"email: {email}")
     print(f"password: {password}")
     print(f"Cores: {CORES}")
-    print(f"files: {NUMBER_OF_FILES}")
