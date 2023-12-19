@@ -1,3 +1,4 @@
+
 # Product details
 product_1_name, product_1_price = "Laptop", 1200.0
 product_2_name, product_2_price = "Headphones", 50.0
@@ -35,4 +36,3 @@ if discount > 0:
     print(f"Final Amount: ${final_amount}")
 else:
     print("No discount applied.")
-    print(f"Final Amount: ${final_amount}")
