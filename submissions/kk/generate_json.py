@@ -1,29 +1,3 @@
-# import pathlib 
-# import json 
-# print('**')
-# from pathlib import Path
-# import json
-
-# # Specify the directory where you want to create the JSON files
-# output_directory = Path("json_files")
-
-# # Create the directory if it doesn't exist
-# output_directory.mkdir(exist_ok=True)
-
-# # Create ten JSON files
-# for i in range(1, 11):
-#     # Generate the filename (e.g., file1.json, file2.json, ..., file10.json)
-#     filename = output_directory / f"file{i}.json"
-
-#     # Data to be written to the JSON file
-#     data = {"key": f"value{i}"}
-
-#     # Write the data to the JSON file
-#     with filename.open(mode="w") as file:
-#         json.dump(data, file, indent=2)
-
-# print("Ten JSON files created successfully in the 'json_files' directory.")
-
 
 import json
 from datetime import datetime
