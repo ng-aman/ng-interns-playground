@@ -52,5 +52,3 @@ def process_json_files(json_folder):
 # Example usage
 json_folder_path = os.path.join(os.getcwd(), "json_files")
 process_json_files(json_folder_path)
-
-
