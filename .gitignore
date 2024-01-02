@@ -129,7 +129,8 @@ ENV/
 env.bak/
 venv.bak/
 
-# Remove specific environment file
+# Remove specific config file
+config.py
 
 
 # Spyder project settings
