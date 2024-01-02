@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Depends, HTTPException
 from pydantic import BaseModel
 from sqlalchemy.orm import Session, sessionmaker
-from sqlalchemy import create_engine, Column, Integer, String
+from sqlalchemy import create_engine, Column, Integer, String, Float
 from sqlalchemy.ext.declarative import declarative_base
 import joblib
 
@@ -17,6 +17,10 @@ Base = declarative_base()
 class Prediction(Base):
     __tablename__ = "predictions"
     id = Column(Integer, primary_key=True, index=True)
+    sepal_length = Column(Float)
+    sepal_width = Column(Float)
+    petal_length = Column(Float)
+    petal_width = Column(Float)
     species = Column(String(255), index=True)
 
 # SQLAlchemy engine and session
@@ -62,7 +66,13 @@ def batch_predictions(request: BatchPredictionRequest, db: Session = Depends(get
         species = iris.target_names[prediction]
 
         # Store prediction in the database
-        db_prediction = Prediction(species=species)
+        db_prediction = Prediction(
+            sepal_length=sample_data[0],
+            sepal_width=sample_data[1],
+            petal_length=sample_data[2],
+            petal_width=sample_data[3],
+            species=species
+        )
         db.add(db_prediction)
         db.commit()  # Commit changes inside the loop
         db.refresh(db_prediction)
