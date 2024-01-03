@@ -83,5 +83,7 @@ def predict_multiple(input_data: InputDataList):
             db.commit()  # Ensure that you commit changes to the database
 
             predictions.append({"prediction": int(prediction), "species": species})
+    
     finally:
         db.close()  # Ensure that you close the database session
+    return {'predictions':predictions}
