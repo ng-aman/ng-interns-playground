@@ -1,7 +1,5 @@
 import os
 from dotenv import load_dotenv
-
-
 from configure import CORES, NUMBER_OF_FILES
 
 load_dotenv()
