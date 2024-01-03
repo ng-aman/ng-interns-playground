@@ -2,7 +2,7 @@ import pandas as pd
 import glob
 
 # Path of directory containing JSON files
-file_path = "E:\\ngenux\\output\\"
+file_path = "C:\\Users\\MohammedKareemKhan\\Desktop\\ngenux_kk\\output\\"
 
 
 # Use glob to get a list of all JSON files in the directory

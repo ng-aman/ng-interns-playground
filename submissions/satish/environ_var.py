@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 from configure import cores, user_name
 
-load_dotenv("sample.env")
+load_dotenv()
 
 password = os.getenv("PASSWORD")
 host = os.getenv("DB_HOST")

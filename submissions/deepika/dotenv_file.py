@@ -1,8 +1,6 @@
 import os
 from dotenv import load_dotenv
-
-
-from config import CORES, NUMBER_OF_FILES
+from configure import CORES, NUMBER_OF_FILES
 
 load_dotenv()
 host = os.environ.get("HOST_NAME")
