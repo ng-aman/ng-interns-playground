@@ -1,0 +1,963 @@
+select * from actor;
+-- What is the SQL query for extracting the year and month from the "payment_date" column, 
+-- calculating the monthly average spend by dividing the total amount by the count of distinct customer IDs,
+--  and grouping the results by year and month, with the final output ordered by year and month?
+
+SELECT
+EXTRACT(YEAR FROM payment_date) AS year,
+EXTRACT(MONTH FROM payment_date) AS mon,
+SUM(amount)/COUNT(DISTINCT customer_id) AS avg_spend
+FROM payment
+GROUP BY year, mon
+ORDER BY year, mon;
+
+
+SELECT
+last_name,
+COUNT(*)
+FROM actor
+WHERE last_name LIKE ('%ry')
+OR last_name LIKE ('%en')
+GROUP BY last_name;
+
+-- Create a query to generate a single-row result with two columns, "good_days" and "bad_days,"
+-- representing the number of days in May 2005 categorized as good (more than 100 rentals) and bad (100 or fewer rentals) 
+-- based on daily rentals, taking into account datetime columns and suggesting exploration of the rental table for insights.
+
+
+WITH daily_rentals AS (
+SELECT
+DATE(rental_date) AS dt,
+COUNT(*) AS num_rentals
+FROM rental
+WHERE DATE(rental_date) >= '2005-07-01'
+AND DATE(rental_date) <= '2005-07-31'
+GROUP BY dt
+)
+SELECT
+SUM(CASE WHEN num_rentals > 100 THEN 1
+ELSE 0
+END) AS good_days,
+31 - SUM(CASE WHEN num_rentals > 100 THEN 1
+ELSE 0
+END) AS bad_days
+FROM daily_rentals;
+
+
+-- Create a query to determine the number of fast movie watchers, who, on average, return their rentals within 5 days,
+-- versus slow movie watchers, who take more than 5 days on average to return their rentals, 
+-- considering rounded-up days for each rental transaction, excluding rentals with null return timestamps,
+ -- and with no specific order for the results.
+
+select * from rental;
+
+
+
+WITH average_rental_days AS (
+SELECT
+customer_id,
+AVG(EXTRACT(days FROM (return_date - rental_date) ) + 1) AS average_days
+FROM rental
+WHERE return_date IS NOT NULL
+GROUP BY customer_id
+)
+SELECT CASE WHEN average_days <= 5 THEN 'fast_watcher'
+WHEN average_days > 5 THEN 'slow_watcher'
+ELSE NULL
+END AS watcher_category,
+COUNT(*)
+FROM average_rental_days
+GROUP BY watcher_category;
+
+
+-- query to return the film category id with the most films, as well as the number films in that category 
+
+
+-- Write a query to return the title of the second shortest film based on its duration/length
+select * from film;
+select title from film where film_id in(
+select film_id  from film order by length limit 2)order by length desc limit 2;
+
+select * from film where film_id in (select film_id from film order by length asc limit 2) limit 1 ;
+select * from rental;
+-- Compose a query to retrieve the count of films with zero rentals in July 2005, 
+-- considering the entire movie catalog from the film table.
+
+select rental_id  from rental where date(rental_date)  >= '2005-07-01' and date(rental_date) <= '2005-07-31' ;
+
+SELECT
+DATE(rental_date) AS dt,
+COUNT(*) AS num_rentals
+FROM rental
+WHERE DATE(rental_date) >= '2005-07-01'
+AND DATE(rental_date) <= '2005-07-31'
+GROUP BY dt;
+
+select film_id,title  from film where film_id not in
+(select distinct(film_id) from inventory where inventory_id in(
+select inventory_id  from rental where DATE(rental_date) >= '2005-07-01'
+AND DATE(rental_date) <= '2005-07-31'))
+;
+select * from film_actor  where film_id =(
+select film_id from film where title = 'African Egg');
+
+select * from film_actor fa ;
+select * from actor;
+
+
+select count(actor_id) over(partition by actor_id)from film_actor;
+with count_of_film as(
+select actor_id,count(actor_id) from film_actor
+group by actor_id)
+case when count_of_film >30 then 'productive'
+else 'less pridictive'
+;
+
+select * from inventory;
+
+select count(distinct i.film_id) as in_stock ,
+(select count(distinct f.film_id) from film f)-count(distinct i.film_id)  as not_in_stock
+from inventory i join film f
+on f.film_id = i.film_id;
+
+select count(distinct i.film_id) as in_stock,
+(select count(distinct f.film_id)from film f) - count(distinct i.film_id)as;
+select * from rental;
+select rental_id ,count(customer_id) from rental
+group by rental_id;
+
+sELECT
+    COUNT(DISTINCT c.customer_id) AS renting_customers,
+    COUNT(DISTINCT c.customer_id) - COUNT(DISTINCT r.customer_id) AS non_renting_customers
+FROM customer c
+LEFT JOIN rental r ON c.customer_id = r.customer_id
+WHERE r.rental_date >= '2005-05-01' AND r.rental_date <= '2005-05-31';
+
+-- Create a query to identify and retrieve the count of unique inventory IDs associated with movies that have zero demand (zero rentals) in May 2005,
+-- intending to remove these less popular movies from the inventory, considering that a movie may have multiple inventory IDs. 
+ select * from rental;
+ select * from film;
+ select * from inventory i ;
+select * from payment;
+ select count(distinct inventory_id) from rental where inventory_id not in(
+select distinct inventory_id from rental where date(rental_date) between '2005-05-01' and '2005-05-31');
+
+-- Create a query to categorize customers into three groups (high, medium, low) based on their movie rental spend: 
+-- High: Movie rental spend greater than or equal to $150. 
+-- Medium: Movie rental spend greater than or equal to $100 and less than $150. 
+-- Low: Movie rental spend less than $100. 
+
+with total_spent as(
+select customer_id, sum(amount)as tot_spent from payment
+group by customer_id)
+select 
+case when tot_spent > 150 then 'high'
+when tot_spent >=100 and tot_spent <=150 then 'medium' 
+when tot_spent <100 then 'low'
+end as movie_spenders, count(*) from total_spent group by movie_spenders;
+
+-- Formulate a query to retrieve the top 5 customer IDs and their rankings based on spending for each store.
+--The order of results is not specified, and in the case of ties, return any one of them.
+
+
+select * from (
+select store_id, p.customer_id,sum(amount)as revenue, 
+rank() over(partition by store_id order by sum(amount) desc) as r 
+from payment p join customer c 
+using(customer_id)
+group by store_id,p.customer_id
+order by store_id,revenue desc) as revenue_ranking
+where revenue_ranking.r <=5;
+
+
+
+-- Compose a query to determine the number of happy customers from May 24th (inclusive) to May 31st (inclusive), 
+-- defined as customers who made at least one rental on each day of any two consecutive days. 
+/*
+Hint 
+• For customer 1, you can create the following temporary table: 
+• customer 1, first rental date, second rental date 
+• customer 1, second rental date, third rental date 
+• .............. 
+• customer 1, second last rental date, last rental date 
+• customer 1, last rental date, NULL 
+• As long as there is at least one row, where the delta of the last 2 columns are not null, 
+and less or equal than 1 day, this customer must be a happy customer. 
+*/
+
+
+
+--5 Create a query to provide the cumulative daily rental spending for specified 
+-- customers (customer_id 3, 4, 5), displaying the total spent by each user up to the days they had rentals.
+-- Exclude days without any rentals
+
+with daily_rentals as
+
+(select date(rental_date) as date , customer_id , count(rental_date) as rental
+from rental 
+where customer_id in (3,4,5)
+group by customer_id,date(rental_date))
+
+select date,customer_id,rental,
+sum(rental) over (partition by customer_id order by date) as cummulative_rental
+from daily_rentals
+order by customer_id,date;
+
+/*
+-- Any customers who made 10 movie rentals are happy customers. 
+Write a query to return the average number of days for a customer to make his/her 10th rental. 
+• If a customer has never become a ‘happy’ customer, you should skip this customer 
+when computing the average. 
+• You can use EXTRACT(DAYS FROM tenth_rental_date - first_rental_date) to get the 
+number of days in between the 1st rental and 10th rental 
+• Use ROUND(average_days) to return an integer 
+*/
+select * from category c ;
+select * from rental;
+select * from film;
+select * from inventory i ;
+select * from payment;
+with happy_cust as (
+select customer_id,count(inventory_id)as cnt from rental r 
+group by customer_id
+having count(inventory_id) >10);
+
+SELECT ROUND(AVG(days_between_first_and_tenth)) AS average_days
+FROM (
+    SELECT customer_id,
+           EXTRACT(DAYS FROM MAX(CASE WHEN rn = 10 THEN rental_date END) - MIN(rental_date)) AS days_between_first_and_tenth
+    FROM (
+        SELECT customer_id,
+               rental_date,
+               ROW_NUMBER() OVER (PARTITION BY customer_id ORDER BY rental_date) AS rn
+        FROM rental
+    ) AS numbered_rentals
+    GROUP BY customer_id
+    HAVING COUNT(*) >= 10
+) AS happy_customers;
+
+-- To find the customer who spent the most in rentals for each movie category. If there are one ties return one.
+
+select * from category c ;
+select * from rental;
+select * from film;
+select * from inventory i ;
+select * from payment;
+select * from film_category fc ;
+
+WITH RankedRentals AS (
+    SELECT
+        r.customer_id,
+        amount,
+        RANK() OVER (PARTITION BY category_id ORDER BY amount DESC) AS rank_within_category
+    FROM rental r join inventory i
+    using(inventory_id)
+    join film_category fc 
+    using(film_id)
+    join payments
+    
+    
+)
+SELECT
+    customer_id,
+    amount
+FROM RankedRentals
+WHERE rank_within_category = 1;
+
+select p.customer_id as cus_id,fc.category_id as flm_cat_id 
+from payment p join rental r on p.customer_id = r.customer_id 
+join inventory i 
+on r.inventory_id = i.inventory_id 
+join film f 
+on i.film_id =f.film_id 
+join film_category fc 
+on fc.film_id =f.film_id;
+
+-- set--1
+/*
+Number of high spend customers by month. 
+Write a query to count the number of customers who spend more than (>) $20 by month.
+Use EXTRACT(YEAR from datetime field) and EXTRACT(MONTH from datetime field) to get year and month from a timestamp column. 
+The order of your results doesn't matter. 
+*/
+
+with customer_spend as (
+select extract(year from payment_date) as yr, extract(month from payment_date) as mnth, customer_id, sum(amount) as spend 
+from payment p 
+group by yr,mnth,customer_id
+order by mnth
+)
+select customer_spend.yr, customer_spend.mnth, count(customer_id) as customer_count
+from customer_spend
+where customer_spend.spend >20
+group by customer_spend.yr, customer_spend.mnth;
+
+
+-- Most popular movie category (name and id).  
+-- Write a query to return the name of the most popular film category and its category id. 
+-- If there are ties, return just one of them. 
+
+with movie_cat_count as(
+select count(*)as cnt,category_id 
+from film_category fc 
+group by category_id )
+select category_id,name from category where category_id =
+(select category_id from movie_cat_count 
+order by cnt desc 
+limit 1);
+
+WITH movie_cat_count AS (
+    SELECT COUNT(*) AS cnt, category_id
+    FROM film_category fc 
+    GROUP BY category_id
+)
+SELECT c.category_id, c.name
+FROM category c
+JOIN (
+    SELECT category_id
+    FROM movie_cat_count 
+    ORDER BY cnt DESC
+    LIMIT 1
+) AS most_popular_category
+ON c.category_id = most_popular_category.category_id;
+
+-- Percentage of revenue per movie. 
+
+-- Write a query to return the percentage of revenue for each of the following films: film_id <= 10. 
+-- Formula: revenue (film_id x) * 100.0/ revenue of all movies. 
+
+select film_id, sum(rental_rate /(select sum(rental_rate) from film where film_id < 10)) from film
+group by film_id
+order by film_id;
+select sum(rental_rate) from film
+where film_id <=10;
+
+SELECT
+  f.film_id,
+  f.title,
+  sum(amount) * 100.0 / (SELECT SUM(amount) FROM payment) AS percentage_of_revenue
+FROM
+  film f
+  JOIN inventory i ON f.film_id = i.film_id
+  JOIN rental r using (inventory_id)
+  JOIN payment p ON r.rental_id = p.rental_id
+WHERE
+  f.film_id <= 10
+GROUP BY
+  f.film_id, f.title
+ORDER BY
+  f.film_id;
+  
+ Shortest film by category. 
+
+-- Write a query to return the shortest movie from each category.
+-- The order of your results doesn't matter. If there are ties, return just one of them.
+-- Return the following columns: film_id, title, length, category, row_num. 
+with a as (select f.film_id , title, name, length, row_number() over(partition by c.category_id order by length asc ) rn
+from category c 
+join film_category fc on c.category_id = fc.category_id 
+join film f on fc.film_id=f.film_id)
+select * from a where rn =1;
+/*SET B
+-- Most productive actor. 
+Write a query to return the first name and the last name of the actor who appeared in 
+the most films. 
+*/
+
+with popular_act as(
+select actor_id, count(actor_id) from film_actor fa 
+group by actor_id 
+order by count desc)
+select * from actor where actor_id =
+(select actor_id from popular_act
+limit 1)
+;
+
+/*
+Films with more than 10 actors. 
+Write a query to return the titles of the films with >= 10 actors.
+*/
+
+with film_actors as(
+select film_id, count(actor_id)as actors from film_actor
+group by film_id
+having count(actor_id) >= 10)
+select title from film where film_id in(
+select film_id from film_actors)
+;
+/*Top 5 most rented movie in June 2005. 
+Write a query to return the film_id and title of the top 5 movies that were rented the most times in June 2005. 
+Use the rental_date column from the rental for the transaction time. The order of your results doesn't matter.
+ If there are ties, return any 5 of them. */
+
+WITH TopMovies AS (
+    SELECT
+        film_id,
+        COUNT(*) AS rental_count
+    FROM rental
+    join inventory i
+    using (inventory_id)
+    WHERE EXTRACT(YEAR FROM rental_date) = 2005 AND EXTRACT(MONTH FROM rental_date) = 6
+    GROUP BY film_id
+    ORDER BY rental_count DESC
+    LIMIT 5
+)
+SELECT
+    tm.film_id,
+    f.title
+FROM TopMovies tm
+JOIN film f ON tm.film_id = f.film_id;
+
+with top_rent_movies as(select film_id, count(*) as rent_cnt
+from rental r
+join inventory using (inventory_id)
+where date(rental_date) between '2005-06-01' and '2005-06-30'
+group by film_id
+order by rent_cnt desc
+limit 5)
+select film_id,title from film where film_id in(
+select film_id from top_rent_movies) ;
+/*
+Percentage of revenue per movie by category. 
+Write a query to return the percentage of revenue for each of the following films: film_id <= 10 by its category. 
+Formula: revenue (film_id x) * 100.0/ revenue of all movies in the same category. 
+The order of your results doesn't matter. 
+Return 3 columns: film_id, category name, and percentage. 
+*/
+
+with a as(select c.category_id as cat_id , sum(p.amount) as rvn_per_cat 
+from category c join film_category fc 
+on c.category_id = fc.category_id 
+join film f 
+on f.film_id = fc.film_id 
+join inventory i 
+on i.film_id = f.film_id 
+join rental r 
+on r.inventory_id =i.inventory_id 
+join payment p on p.rental_id =r.rental_id 
+group by c.category_id 
+order by c.category_id), 
+b as (select f.film_id as flm_id,c.name as cat_name,c.category_id as cat_id, sum(p.amount) as rvn_per_mv 
+from film f 
+join film_category fc on f.film_id = fc.film_id 
+join category c on fc.category_id = c.category_id 
+join inventory i on i.film_id = f.film_id 
+join rental r on r.inventory_id =i.inventory_id 
+join payment p on p.rental_id =r.rental_id 
+where f.film_id <=10 
+group by f.film_id ,c.name,c.category_id order by f.film_id ) 
+select b.flm_id as film_id,b.cat_name as category_id, (b.rvn_per_mv/a.rvn_per_cat)*100 as revenue_percentage 
+from b join a on b.cat_id=a.cat_id group by b.flm_id,b.cat_name,b.rvn_per_mv,a.rvn_per_cat;
+
+WITH FilmCategoryRevenue AS (
+    SELECT
+        f.film_id,
+        fc.category_id,
+        c.name AS category_name,
+        SUM(p.amount) AS revenue
+    FROM
+        film f
+        JOIN film_category fc ON f.film_id = fc.film_id
+        JOIN category c ON fc.category_id = c.category_id
+        JOIN inventory i ON f.film_id = i.film_id
+        JOIN rental r ON i.inventory_id = r.inventory_id
+        JOIN payment p ON r.rental_id = p.rental_id
+    WHERE
+        f.film_id <= 10
+    GROUP BY
+        f.film_id, fc.category_id, c.name
+),
+CategoryTotalRevenue AS (
+    SELECT
+        category_id,
+        SUM(revenue) AS total_revenue
+    FROM
+        FilmCategoryRevenue
+    GROUP BY
+        category_id
+)
+SELECT
+    fcr.film_id,
+    fcr.category_name,
+    (fcr.revenue * 100.0) / ctr.total_revenue AS percentage
+FROM
+    FilmCategoryRevenue fcr
+    JOIN CategoryTotalRevenue ctr ON fcr.category_id = ctr.category_id
+   ;
+/*Top 2 films by category. 
+
+Write a query to return top 2 films based on their rental revenues in their category. 
+A film can only belong to one category. The order of your results doesn't matter. 
+If there are ties, return just one of them. Return the following columns: category, film_id, revenue, row_num.*/
+
+with ranked_film as(
+  select fc.category_id,c.name,f.film_id,sum(p.amount) as revenue,
+  row_number() over(partition by fc.category_id order by sum(p.amount)desc)as row_num 
+  from payment p
+  join rental r using (rental_id)
+  join inventory i using (inventory_id)
+  join film f using (film_id)
+  join film_category fc using(film_id)
+  join category c using (category_id)
+ group by fc.category_id,c.name,f.film_id)
+select name,film_id,revenue,row_num from ranked_film 
+where row_num <=2;
+ 
+
+/*Customer who spent the most. 
+Write a query to return the first and last name of the customer who spent the most on 
+movie rentals in Feb 2007.*/
+
+with most_spent_cust as(select customer_id,sum(amount) as spent_amnt from payment
+where date(payment_date) between '2007-02-01' and '2007-02-28'
+group by customer_id
+order by spent_amnt desc 
+limit 1)
+select first_name,last_name from customer
+where customer_id = (select customer_id from most_spent_cust) ;
+
+/*Film with the second largest cast. 
+
+Write a query to return the title of the film with the second largest cast. 
+If there are ties, e.g., two movies have the same number of actors, return either one of the movies. */
+
+with num_actors_in_movie as
+(  select film_id,count(actor_id)as num_actors from film_actor fa 
+    group by film_id
+ order by num_actors desc
+limit 1
+offset 1)
+select title from film where film_id =
+(select film_id from num_actors_in_movie
+) ;
+
+WITH RankedFilms AS (
+    SELECT
+        f.film_id,
+        f.title,
+        COUNT(fa.actor_id) AS cast_size,
+        DENSE_RANK() OVER (ORDER BY COUNT(fa.actor_id) DESC) AS rank
+    FROM
+        film f
+        JOIN film_actor fa ON f.film_id = fa.film_id
+    GROUP BY
+        f.film_id, f.title
+)
+SELECT
+    title
+FROM
+    RankedFilms
+WHERE
+    rank = 2;
+
+   Top 3 money making movie categories. 
+/*
+Write a query to return the name of the 3 movie categories that generated 
+the most rental revenue and rental revenue from each of the category. 
+The order of your results doesn't matter. If there are ties, return just one of them. 
+*/
+
+select c.name,c.category_id,sum(amount)as top_money_making,
+rank() over(order by sum(amount)desc) as revenue_rank
+from payment p 
+join rental r using (rental_id)
+join inventory i using (inventory_id)
+join film f using (film_id)
+join film_category fc using (film_id)
+join category c using (category_id)
+group by name,category_id 
+order by top_money_making desc 
+limit 3;
+
+
+WITH CategoryRevenue AS (
+    SELECT
+        c.category_id,
+        c.name AS category_name,
+        SUM(p.amount) AS total_revenue,
+        RANK() OVER (ORDER BY SUM(p.amount) DESC) AS revenue_rank
+    FROM
+        rental r
+        JOIN payment p ON r.rental_id = p.rental_id
+        JOIN inventory i ON r.inventory_id = i.inventory_id
+        JOIN film_category fc ON i.film_id = fc.film_id
+        JOIN category c ON fc.category_id = c.category_id
+    GROUP BY
+        c.category_id, c.name
+)
+SELECT
+    category_name,
+    total_revenue
+FROM
+    CategoryRevenue
+WHERE
+    revenue_rank <= 3;
+
+   /*Customer spend vs average spend in the same store. 
+
+Write a query to return a customer's lifetime value for the following: customer_id IN 
+(1, 100, 101, 200, 201, 300, 301, 400, 401, 500). Add a column to compute the average LTV of all customers from the same store. 
+Return 4 columns: customer_id, store_id, customer total spends, average customer spends from the same store.
+ The order of your results doesn't matter. */  
+with cust_ltv as (select customer_id,store_id , sum(amount)as total_spends from payment p 
+join customer c using (customer_id)
+where customer_id in (1, 100, 101, 200, 201, 300, 301, 400, 401, 500)
+group by customer_id,store_id 
+order by customer_id 
+),
+store_avg_spend as
+(select store_id,avg(total_spends)as avg_store_spend
+from cust_ltv
+group by store_id)
+select customer_id,store_id ,total_spends,avg_store_spend
+from cust_ltv join store_avg_spend
+using (store_id);
+
+/*The most productive actors by category. 
+An actor’s productivity is defined as the number of movies he/she has played. 
+Write a query to return the category_id, actor_id and number of movies by the most productive actor in that category. 
+For example: John Doe filmed the most action movies, your query will return John as the result for action movie category.
+ Do this for every movie category. */
+
+
+WITH RankedActors AS (
+    SELECT
+        fc.category_id,
+        a.actor_id,
+        a.first_name || ' ' || a.last_name AS actor_name,
+        COUNT(DISTINCT f.film_id) AS movie_count,
+        ROW_NUMBER() OVER (PARTITION BY fc.category_id ORDER BY COUNT(DISTINCT f.film_id) DESC) AS rank
+    FROM
+        actor a
+        JOIN film_actor fa ON a.actor_id = fa.actor_id
+        JOIN film_category fc ON fa.film_id = fc.film_id
+        JOIN film f ON fc.film_id = f.film_id
+    GROUP BY
+        fc.category_id, a.actor_id, actor_name
+)
+SELECT
+    category_id,
+    actor_id,
+    actor_name,
+    movie_count
+FROM
+    RankedActors
+WHERE
+    rank = 1;
+
+# SET_4
+/*Customer who rented the most. 
+Write a query to return the first and last name of the customer who made the most rental transactions in May 2005.*/
+
+
+with freq_cust as
+(select customer_id, count(customer_id) as cust_CNT
+from rental r 
+where date(rental_date) between '2005-05-01' and '2005-05-31'
+group by customer_id 
+order by cust_CNT desc
+limit 1)
+select first_name,last_name  from customer where customer_id =
+(select customer_id from freq_cust);
+
+/*Returning customers. 
+Write a query to return the number of customers who rented at least one movie in both May 2005 and June 2005.*/
+select count(distinct customer_id)
+from rental r 
+where date(rental_date) between  '2005-05-01' and '2005-05-31' and 
+customer_id in(select distinct customer_id from rental r 
+where date(rental_date) between  '2005-06-01' and '2005-06-30') ;
+
+/*In-demand vs not-in-demand movies. 
+Write a query to return the number of in demand and not in demand movies in May. 
+2005. Assumptions: all films are available for rent before 
+May. But if a film is not in stock, it is not in demand. The order of your results doesn't matter. 
+Definition:  
+in-demand: rented >1 times in May 2005.  
+not-in-demand: rented <= 1 time in May 2005. */
+
+
+SELECT
+    COUNT(DISTINCT CASE WHEN rental_count > 1 THEN film_id END) AS in_demand_movies,
+    COUNT(DISTINCT CASE WHEN rental_count <= 1 THEN film_id END) AS not_in_demand_movies
+FROM (
+    SELECT
+        f.film_id,
+        COUNT(r.rental_id) AS rental_count
+    FROM
+        film f
+        LEFT JOIN inventory i ON f.film_id = i.film_id
+        LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+    WHERE
+        EXTRACT(YEAR FROM r.rental_date) = 2005
+        AND EXTRACT(MONTH FROM r.rental_date) = 5
+    GROUP BY
+        f.film_id
+) AS RentalCounts;
+/*Top 5 customers by store. 
+
+Write a query to return the top 5 customer ids and their rankings based on their spend for each store. 
+The order of your results doesn't matter. If there are ties, return just one of them. */
+
+with top_cust as (select customer_id,store_id, sum(amount) as revenue ,
+row_number() over(partition by store_id order by sum(amount)desc)as ranky
+from payment
+join customer c using (customer_id)
+group by customer_id,store_id)
+select * from top_cust where ranky<6;
+
+/*Movie percentiles by revenue by category. 
+
+Write a query to generate percentile distribution for the following movies by their total rental revenue in their category. 
+film_id <= 20. Use NTILE(100) to create percentile. The order of your results doesn't matter. Return the following columns:
+ category, film_id, revenue, percentile. */
+WITH MovieRevenuePercentiles AS (
+    SELECT
+        fc.category_id,
+        f.film_id,
+        SUM(p.amount) AS revenue,
+        NTILE(100) OVER (PARTITION BY fc.category_id ORDER BY SUM(p.amount) DESC) AS percentile
+    FROM
+        film f
+        JOIN film_category fc ON f.film_id = fc.film_id
+        JOIN inventory i ON f.film_id = i.film_id
+        JOIN rental r ON i.inventory_id = r.inventory_id
+        JOIN payment p ON r.rental_id = p.rental_id
+    WHERE
+        f.film_id <= 20
+    GROUP BY
+        fc.category_id, f.film_id
+)
+SELECT
+    fc.category_id,
+    mr.film_id,
+    mr.revenue,
+    mr.percentile
+FROM
+    MovieRevenuePercentiles mr
+    JOIN film_category fc ON mr.film_id = fc.film_id;
+
+   
+ SELECT
+    c.name AS category,
+    f.film_id,
+    SUM(p.amount) AS revenue,
+    NTILE(100) OVER (PARTITION BY c.category_id ORDER BY SUM(p.amount) DESC) AS percentile
+from film f
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+JOIN inventory i ON f.film_id = i.film_id
+JOIN rental r ON i.inventory_id = r.inventory_id
+JOIN payment p ON r.rental_id = p.rental_id
+WHERE f.film_id <= 20
+GROUP BY c.name,c.category_id, f.film_id
+ORDER BY c.name, f.film_id;
+ 
+WITH MovieRevenue AS (
+  SELECT
+    c.name as category,
+    f.film_id,
+    SUM(p.amount) AS revenue
+  FROM
+    category c
+    join film_category fc on c.category_id = fc.category_id
+    JOIN film f ON fc.film_id = f.film_id
+    JOIN inventory i ON f.film_id = i.film_id
+    JOIN rental r ON i.inventory_id = r.inventory_id
+    JOIN payment p ON r.rental_id = p.rental_id
+  WHERE
+    f.film_id <= 20
+  GROUP BY
+    category, f.film_id
+)
+ 
+SELECT
+  category,
+  film_id,
+  revenue,
+  NTILE(100) OVER ( ORDER BY revenue) AS percentile
+FROM
+  MovieRevenue
+order by category;  
+   
+#set 5
+Min and max spend. 
+/*
+Write a query to return the minimum and maximum customer total spend in May 2007.
+ For each customer, first calculate their total spend in May 2007. 
+ Then use MIN, and MAX function to return the min and max customer spend. 
+*/
+
+with cust_total_spent as (select customer_id, sum(amount) as tot_spent_amnt
+from payment p 
+where extract(year from payment_date) =2007
+and extract(month from payment_date) = 5
+group by customer_id )
+select min(tot_spent_amnt) as min_spent,
+max(tot_spent_amnt) from cust_total_spent;
+
+/*Second highest spend customer. 
+
+Write a query to return the name of the customer who spent 
+the second highest for movie rentals in May 2007 If there are ties,
+return any one of them. */
+
+with cust_spent as (select customer_id,sum(amount) from payment
+where extract(year from payment_date)=2007
+and extract(month from payment_date)=5
+group by customer_id
+order by sum desc 
+limit 1
+offset 1)
+select first_name,last_name from customer where customer_id =(
+select customer_id from cust_spent);
+
+/*Movie groups by rental income. 
+
+Write a query to return the number of films in 3 separate groups: high, medium, low. 
+The order of your results doesn't matter.
+If a movie has no rental revenue, it belongs to the low group. 
+Definition: 
+high: revenue >= $100. 
+medium: revenue >= $20, <$100 . 
+low: revenue <$20. */
+with a as(select f.film_id as id, sum(amount) sm
+from film f  
+left join inventory i on f.film_id = i.film_id
+left join rental r on i.inventory_id = r.inventory_id
+left join payment p on p.rental_id = r.rental_id group by f.film_id)
+select case when a.sm>=100 then 'high'
+when a.sm<20  or a.sm is null then 'low'
+when a.sm>=20 and sm<100 then 'medium' end as cat,count(*) from a group by cat ;
+ 
+ with film_revenue as (select film_id, sum(AMOUNT) as total_revenue
+from payment p join rental r 
+using (rental_id)
+ join inventory i 
+using (inventory_id)
+ join film
+using (film_id)
+group by film_id)
+select case when total_revenue >= 100 then 'high'
+when total_revenue >= 20 and total_revenue<100 then 'medium'
+when total_revenue <20 or total_revenue is null then 'low'
+end as film_group,
+count(*)
+from film_revenue
+group by film_group
+;
+select revenue_group, COUNT(film_id) AS film_count
+from (select f.film_id,
+CASE
+WHEN SUM(p.amount) >= 100 THEN 'high'
+WHEN SUM(p.amount) >= 20 AND SUM(p.amount) < 100 THEN 'medium'
+ELSE 'low'
+END AS revenue_group
+from film f LEFT join inventory i ON f.film_id = i.film_id
+LEFT join rental r ON i.inventory_id = r.inventory_id
+LEFT join payment p ON r.rental_id = p.rental_id
+GROUP by f.film_id) AS film_revenue
+GROUP by revenue_group
+ORDER by revenue_group;
+
+
+Movie rentals and average rentals in the same category. 
+/*
+Write a query to return the number of rentals per movie, and the average number of rentals in its same category. 
+You only need to return results for film_id <= 10. Return 4 columns: 
+film_id, category name, number of rentals, and the average number of rentals from its category. 
+*/
+
+WITH MovieRentals AS (
+    SELECT
+        f.film_id,
+        f.title,
+        fc.category_id,
+        c.name AS category_name,
+        COUNT(r.rental_id) AS num_rentals
+    FROM
+        film f
+        JOIN film_category fc ON f.film_id = fc.film_id
+        JOIN category c ON fc.category_id = c.category_id
+        JOIN inventory i ON f.film_id = i.film_id
+        LEFT JOIN rental r ON i.inventory_id = r.inventory_id
+    WHERE
+        f.film_id <= 10
+    GROUP BY
+        f.film_id, f.title, fc.category_id, c.name
+)
+SELECT
+    mr.film_id,
+    mr.category_name,
+    mr.num_rentals,
+    AVG(mr.num_rentals) OVER (PARTITION BY mr.category_id) AS avg_category_rentals
+FROM
+    MovieRentals mr;
+ /*
+   Spend difference between first and second rentals. 
+Write a query to return the difference of the spend amount between the following customers' 
+first movie rental and their second rental. customer_id in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10). 
+Use first spend - second spend to compute the difference. Skip users who only rented once. 
+You can use ROW_NUMBER to identify the first and second transactions. 
+You can use LAG or LEAD to find previous or following transaction amount. 
+*/
+select * from category c ;
+select * from rental;
+select * from inventory i ;
+select * from payment;
+select * from film_category fc ;
+select * from actor;
+select * from film_actor fa ;
+select * from film ;
+select * from staff;
+select * from customer c ;
+
+with cust_payment_details as (select customer_id,amount as revenue, date(payment_date) as pay_date, 
+row_number() over(partition by customer_id order by payment_date) as ranky
+from payment p 
+where customer_id in (1, 2, 3, 4, 5, 6, 7, 8, 9, 10)
+)
+select customer_id,
+max(case when ranky = 1 then revenue end) as first_spent,
+max(case when ranky = 2 then revenue end)as secnd_spnt,
+max(case when ranky = 1 then revenue end)  - 
+max(case when ranky = 2 then revenue end) as spent_differ
+from cust_payment_details
+where ranky <3
+group by customer_id
+;
+   
+   
+   
+   with delta as (
+select customer_id,sum(amount) as revenue,date(payment_date) as date,
+row_number() over (partition by customer_id order by payment_date) as rank
+from payment
+where customer_id in (1,2,3,4,5,6,7,8,9,10)
+group by customer_id,payment_date)
+ 
+SELECT
+  customer_id,
+  MAX(CASE WHEN rank = 1 THEN revenue END) AS first_spend,
+  MAX(CASE WHEN rank = 2 THEN revenue END) AS second_spend,
+  MAX(CASE WHEN rank = 1 THEN revenue END) - MAX(CASE WHEN rank = 2 THEN revenue END) AS spend_difference
+FROM
+  delta
+WHERE
+  rank<=2
+GROUP BY
+  customer_id;
+  
+ SELECT f.film_id, c.name, COUNT(r.rental_id) AS num_rentals, AVG(category_rentals.num_rentals) AS avg_rentals
+FROM film f
+JOIN film_category fc ON f.film_id = fc.film_id
+JOIN category c ON fc.category_id = c.category_id
+JOIN rental r ON f.film_id = r.inventory_id
+JOIN (
+    SELECT fc.category_id, COUNT(r.rental_id) AS num_rentals
+    FROM film_category fc
+    JOIN rental r ON fc.film_id = r.inventory_id
+    GROUP BY fc.category_id
+) AS category_rentals ON c.category_id = category_rentals.category_id
+WHERE f.film_id <= 10
+GROUP BY f.film_id, c.name;
