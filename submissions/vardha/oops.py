@@ -78,6 +78,8 @@ def add_prefix(prefix):
 def account_info(account):
     return f"{account.owner} - Balance: {account.balance}"
 
+
 # Display account info with the added prefix
 print(account_info(checking_account))
+
 
